@@ -33,6 +33,25 @@ Configured in `FireEngine/FireEngine.ThirdParty.props`:
 - Data/assets: `yaml-cpp.lib`, `physfs.lib`, `freetype.lib`
 - Required Windows system libs: `ws2_32.lib`, `winmm.lib`, `imm32.lib`, `version.lib`, `bcrypt.lib`, `dbghelp.lib`
 
+## Troubleshooting: baseline checkout errors (git 128)
+If Visual Studio shows errors similar to:
+- `failed to git show versions/baseline.json`
+- `while checking out baseline from commit ...`
+- `git failed with exit code 128`
+
+then your local `C:\vcpkg` clone likely does not contain the baseline commit yet.
+
+Run these commands in **Developer PowerShell**:
+1. `git -C C:\vcpkg fetch --all --tags --prune`
+2. `git -C C:\vcpkg rev-parse HEAD`
+3. `C:\vcpkg\vcpkg.exe install --triplet x64-windows --x-manifest-root <PATH_TO_REPO_ROOT>`
+
+Or use the helper script from repo root:
+- `powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\vcpkg.json -Triplet x64-windows`
+
+This script fetches vcpkg history, rewrites `builtin-baseline` in `vcpkg.json` to your local vcpkg HEAD commit, and runs install.
+
 ## Notes
 - Some library names may vary by package manager/build profile (for example debug suffixes or compiler-specific names).
 - If your local package names differ, update `FireEngineThirdPartyLibraries` in `FireEngine/FireEngine.ThirdParty.props` once and all configurations will pick it up.
+- If your repository is under OneDrive, ensure files are fully available offline to avoid intermittent toolchain read failures.
