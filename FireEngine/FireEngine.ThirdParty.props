@@ -2,6 +2,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="FireEngineThirdParty">
     <ThirdPartyRoot>$(MSBuildThisFileDirectory)third_party\</ThirdPartyRoot>
+    <GlfwLibraryName Condition="'$(GlfwLibraryName)'==''">glfw3dll.lib</GlfwLibraryName>
 
     <ThirdPartyIncludeDirectories>
       $(ThirdPartyRoot)glad\include;
@@ -38,7 +39,7 @@
 
     <FireEngineThirdPartyLibraries>
       opengl32.lib;
-      glfw3.lib;
+      $(GlfwLibraryName);
       glad.lib;
       assimp.lib;
       imgui.lib;

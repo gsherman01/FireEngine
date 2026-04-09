@@ -27,13 +27,14 @@ The property sheet already defines include/library paths and linker dependencies
 
 ## Linked Libraries (project-wide)
 Configured in `FireEngine/FireEngine.ThirdParty.props`:
-- OpenGL + windowing: `opengl32.lib`, `glfw3.lib`, `glad.lib`
+- OpenGL + windowing: `opengl32.lib`, `$(GlfwLibraryName)`, `glad.lib`
 - Rendering/editor/model pipeline: `assimp.lib`, `imgui.lib`, `ImGuizmo.lib`
 - Scripting: `mono-2.0-sgen.lib` (manual integration; not in vcpkg baseline)
 - Physics: `BulletDynamics.lib`, `BulletCollision.lib`, `LinearMath.lib`
 - Audio: `openal32.lib`
 - Data/assets: `yaml-cpp.lib`, `physfs.lib`, `freetype.lib`
 - Required Windows system libs: `ws2_32.lib`, `winmm.lib`, `imm32.lib`, `version.lib`, `bcrypt.lib`, `dbghelp.lib`
+- GLFW import library defaults to `glfw3dll.lib` via `GlfwLibraryName`; override this MSBuild property if your package provides `glfw3.lib` instead.
 
 ## Troubleshooting: baseline checkout errors (git 128)
 If Visual Studio shows errors similar to:
