@@ -5,12 +5,12 @@ This repository now has a single dependency/linking setup intended to cover the 
 ## Dependency Sources
 
 ## 1) vcpkg manifest (preferred)
-- File: `vcpkg.json`
-- Covers core engine dependencies for all planned modules.
+- File: `FireEngine/vcpkg.json` (same folder as `FireEngine.sln`).
+- Covers core engine dependencies for all planned modules that are available in vcpkg.
 
 Install example:
 1. Install vcpkg.
-2. From repo root run: `vcpkg install --triplet x64-windows`
+2. From repo root run: `C:\vcpkg\vcpkg.exe install --triplet x64-windows --x-manifest-root .\FireEngine`
 3. Ensure Visual Studio vcpkg integration is enabled (`vcpkg integrate install`).
 
 ## 2) Manual third_party layout (fallback)
@@ -27,7 +27,7 @@ The property sheet already defines include/library paths and linker dependencies
 Configured in `FireEngine/FireEngine.ThirdParty.props`:
 - OpenGL + windowing: `opengl32.lib`, `glfw3.lib`, `glad.lib`
 - Rendering/editor/model pipeline: `assimp.lib`, `imgui.lib`, `ImGuizmo.lib`
-- Scripting: `mono-2.0-sgen.lib`
+- Scripting: `mono-2.0-sgen.lib` (manual integration; not in vcpkg baseline)
 - Physics: `BulletDynamics.lib`, `BulletCollision.lib`, `LinearMath.lib`
 - Audio: `openal32.lib`
 - Data/assets: `yaml-cpp.lib`, `physfs.lib`, `freetype.lib`
@@ -44,14 +44,16 @@ then your local `C:\vcpkg` clone likely does not contain the baseline commit yet
 Run these commands in **Developer PowerShell**:
 1. `git -C C:\vcpkg fetch --all --tags --prune`
 2. `git -C C:\vcpkg rev-parse HEAD`
-3. `C:\vcpkg\vcpkg.exe install --triplet x64-windows --x-manifest-root <PATH_TO_REPO_ROOT>`
+3. `C:\vcpkg\vcpkg.exe install --triplet x64-windows --x-manifest-root <PATH_TO_REPO_ROOT>\FireEngine`
 
 Or use the helper script from repo root:
-- `powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\vcpkg.json -Triplet x64-windows`
+- `powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\FireEngine\vcpkg.json -Triplet x64-windows`
 
-This script fetches vcpkg history, rewrites `builtin-baseline` in `vcpkg.json` to your local vcpkg HEAD commit, and runs install.
+This script fetches vcpkg history, rewrites `builtin-baseline` in `FireEngine/vcpkg.json` to your local vcpkg HEAD commit, and runs install.
 
 ## Notes
+- `mono` is intentionally excluded from `FireEngine/vcpkg.json` because that port may be unavailable for your selected baseline/triplet.
+- Integrate Mono manually in `third_party/mono` (or another package source) and keep linking via `FireEngine.ThirdParty.props`.
 - Some library names may vary by package manager/build profile (for example debug suffixes or compiler-specific names).
 - If your local package names differ, update `FireEngineThirdPartyLibraries` in `FireEngine/FireEngine.ThirdParty.props` once and all configurations will pick it up.
 - If your repository is under OneDrive, ensure files are fully available offline to avoid intermittent toolchain read failures.

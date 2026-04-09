@@ -15,7 +15,6 @@
     "entt",
     "nlohmann-json",
     "yaml-cpp",
-    "mono",
     "bullet3",
     "openal-soft",
     "freetype",
