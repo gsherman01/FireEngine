@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="FireEngineThirdParty">
+    <ThirdPartyRoot>$(MSBuildThisFileDirectory)third_party\</ThirdPartyRoot>
+
+    <ThirdPartyIncludeDirectories>
+      $(ThirdPartyRoot)glad\include;
+      $(ThirdPartyRoot)glfw\include;
+      $(ThirdPartyRoot)glm;
+      $(ThirdPartyRoot)stb;
+      $(ThirdPartyRoot)assimp\include;
+      $(ThirdPartyRoot)imgui;
+      $(ThirdPartyRoot)imguizmo;
+      $(ThirdPartyRoot)mono\include;
+      $(ThirdPartyRoot)openal\include;
+      $(ThirdPartyRoot)bullet\include;
+      $(ThirdPartyRoot)yaml-cpp\include;
+      $(ThirdPartyRoot)entt\include;
+      $(ThirdPartyRoot)nlohmann_json\include;
+      $(ThirdPartyRoot)spdlog\include;
+      $(ThirdPartyRoot)freetype\include;
+      $(ThirdPartyRoot)physfs\include
+    </ThirdPartyIncludeDirectories>
+
+    <ThirdPartyLibraryDirectories>
+      $(ThirdPartyRoot)glfw\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)glad\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)assimp\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)imgui\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)imguizmo\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)mono\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)openal\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)bullet\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)yaml-cpp\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)freetype\lib\$(Platform)\$(Configuration);
+      $(ThirdPartyRoot)physfs\lib\$(Platform)\$(Configuration)
+    </ThirdPartyLibraryDirectories>
+
+    <FireEngineThirdPartyLibraries>
+      opengl32.lib;
+      glfw3.lib;
+      glad.lib;
+      assimp.lib;
+      imgui.lib;
+      ImGuizmo.lib;
+      mono-2.0-sgen.lib;
+      openal32.lib;
+      BulletDynamics.lib;
+      BulletCollision.lib;
+      LinearMath.lib;
+      yaml-cpp.lib;
+      freetype.lib;
+      physfs.lib;
+      ws2_32.lib;
+      winmm.lib;
+      imm32.lib;
+      version.lib;
+      bcrypt.lib;
+      dbghelp.lib
+    </FireEngineThirdPartyLibraries>
+  </PropertyGroup>
+</Project>
