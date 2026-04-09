@@ -205,7 +205,7 @@ int main()
         renderer.DrawMesh(cube, shader, objectA.ToMatrix(), camera, aspect, {0.95f, 0.40f, 0.35f}, lightPosition, lightColor);
         renderer.DrawMesh(cube, shader, objectB.ToMatrix(), camera, aspect, {0.30f, 0.65f, 0.95f}, lightPosition, lightColor);
 
-        Framebuffer::Unbind();
+        framebuffer.Unbind();
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer.GetHandle());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

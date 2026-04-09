@@ -9,6 +9,9 @@ param(
     [string]$Triplet = "x64-windows",
 
     [Parameter(Mandatory = $false)]
+    [string]$Features = "",
+
+    [Parameter(Mandatory = $false)]
     [switch]$SkipInstall
 )
 
@@ -52,7 +55,13 @@ if (-not (Test-Path $vcpkgExe)) {
 }
 
 $manifestRoot = (Resolve-Path (Split-Path -Parent $ManifestPath)).Path
-& $vcpkgExe install --triplet $Triplet --x-manifest-root $manifestRoot
+$installArgs = @("install", "--triplet", $Triplet, "--x-manifest-root", $manifestRoot)
+
+if (-not [string]::IsNullOrWhiteSpace($Features)) {
+    $installArgs += "--x-feature=$Features"
+}
+
+& $vcpkgExe @installArgs
 if ($LASTEXITCODE -ne 0) {
     throw "vcpkg install failed with exit code $LASTEXITCODE"
 }

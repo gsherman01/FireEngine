@@ -6,11 +6,13 @@ This repository now has a single dependency/linking setup intended to cover the 
 
 ## 1) vcpkg manifest (preferred)
 - File: `FireEngine/vcpkg.json` (same folder as `FireEngine.sln`).
-- Covers core engine dependencies for all planned modules that are available in vcpkg.
+- Default install profile is intentionally minimal (`milestone1`) so Visual Studio can restore and compile the first milestone reliably.
 
-Install example:
-1. Install vcpkg.
-2. From repo root run: `C:\vcpkg\vcpkg.exe install --triplet x64-windows --x-manifest-root .\FireEngine`
+Install examples from repo root:
+1. Milestone 1 only (default):
+   - `C:\vcpkg\vcpkg.exe install --triplet x64-windows --x-manifest-root .\FireEngine`
+2. Full planned engine feature set:
+   - `C:\vcpkg\vcpkg.exe install --triplet x64-windows --x-manifest-root .\FireEngine --x-feature=editor,ecs-data,physics,audio,asset-pipeline,tooling`
 3. Ensure Visual Studio vcpkg integration is enabled (`vcpkg integrate install`).
 
 ## 2) Manual third_party layout (fallback)
@@ -47,7 +49,10 @@ Run these commands in **Developer PowerShell**:
 3. `C:\vcpkg\vcpkg.exe install --triplet x64-windows --x-manifest-root <PATH_TO_REPO_ROOT>\FireEngine`
 
 Or use the helper script from repo root:
-- `powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\FireEngine\vcpkg.json -Triplet x64-windows`
+- Milestone 1 only:
+  - `powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\FireEngine\vcpkg.json -Triplet x64-windows`
+- Full feature set:
+  - `powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\FireEngine\vcpkg.json -Triplet x64-windows -Features editor,ecs-data,physics,audio,asset-pipeline,tooling`
 
 This script fetches vcpkg history, rewrites `builtin-baseline` in `FireEngine/vcpkg.json` to your local vcpkg HEAD commit, and runs install.
 

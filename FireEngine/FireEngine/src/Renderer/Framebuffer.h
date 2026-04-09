@@ -10,7 +10,7 @@ public:
     void Resize(int width, int height);
 
     void Bind() const;
-    static void Unbind();
+    void Unbind() const;
 
     unsigned int GetHandle() const { return m_fbo; }
     unsigned int GetColorTexture() const { return m_colorTexture; }
