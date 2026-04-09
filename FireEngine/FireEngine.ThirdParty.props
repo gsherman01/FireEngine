@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="FireEngineThirdParty">
+    <!-- Defaults target vcpkg manifest output under SolutionDir. -->
+    <VcpkgTriplet Condition="'$(VcpkgTriplet)'==''">x64-windows</VcpkgTriplet>
+    <VcpkgInstalledRoot Condition="'$(VcpkgInstalledRoot)'==''">$(SolutionDir)vcpkg_installed\$(VcpkgTriplet)\</VcpkgInstalledRoot>
+
+    <!-- Fallback manual tree (can be used by overriding include/lib directories below). -->
+    <ThirdPartyRoot Condition="'$(ThirdPartyRoot)'==''">$(MSBuildThisFileDirectory)third_party\</ThirdPartyRoot>
+
+    <!-- Library names observed in your installed vcpkg tree. -->
+    <GlfwLibraryName Condition="'$(GlfwLibraryName)'==''">glfw3dll.lib</GlfwLibraryName>
+    <GladLibraryName Condition="'$(GladLibraryName)'==''">glad.lib</GladLibraryName>
+    <AssimpLibraryName Condition="'$(Configuration)'=='Debug'">assimp-vc143-mtd.lib</AssimpLibraryName>
+    <AssimpLibraryName Condition="'$(Configuration)'!='Debug'">assimp-vc143-mt.lib</AssimpLibraryName>
+
+    <ThirdPartyIncludeDirectories>
+      $(VcpkgInstalledRoot)include;
+      $(ThirdPartyRoot)include
+    </ThirdPartyIncludeDirectories>
+
+    <ThirdPartyLibraryDirectories>
+      $(VcpkgInstalledRoot)lib;
+      $(VcpkgInstalledRoot)debug\lib
+    </ThirdPartyLibraryDirectories>
+
+    <FireEngineThirdPartyLibraries>
+      opengl32.lib;
+      $(GlfwLibraryName);
+      $(GladLibraryName);
+      $(AssimpLibraryName);
+      ws2_32.lib;
+      winmm.lib;
+      imm32.lib;
+      version.lib;
+      bcrypt.lib;
+      dbghelp.lib
+    </FireEngineThirdPartyLibraries>
+
+    <VcpkgRuntimeBinDir Condition="'$(Configuration)'=='Debug'">$(VcpkgInstalledRoot)debug\bin\</VcpkgRuntimeBinDir>
+    <VcpkgRuntimeBinDir Condition="'$(Configuration)'!='Debug'">$(VcpkgInstalledRoot)bin\</VcpkgRuntimeBinDir>
+  </PropertyGroup>
+</Project>
