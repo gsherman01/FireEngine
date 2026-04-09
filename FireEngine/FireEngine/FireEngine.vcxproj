@@ -94,6 +94,9 @@
       <AdditionalLibraryDirectories>$(ThirdPartyLibraryDirectories);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(FireEngineThirdPartyLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(VcpkgRuntimeBinDir)" xcopy /Y /D "$(VcpkgRuntimeBinDir)*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -115,6 +118,9 @@
       <AdditionalLibraryDirectories>$(ThirdPartyLibraryDirectories);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(FireEngineThirdPartyLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(VcpkgRuntimeBinDir)" xcopy /Y /D "$(VcpkgRuntimeBinDir)*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -132,6 +138,9 @@
       <AdditionalLibraryDirectories>$(ThirdPartyLibraryDirectories);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(FireEngineThirdPartyLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(VcpkgRuntimeBinDir)" xcopy /Y /D "$(VcpkgRuntimeBinDir)*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -153,6 +162,9 @@
       <AdditionalLibraryDirectories>$(ThirdPartyLibraryDirectories);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(FireEngineThirdPartyLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(VcpkgRuntimeBinDir)" xcopy /Y /D "$(VcpkgRuntimeBinDir)*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <ItemGroup>

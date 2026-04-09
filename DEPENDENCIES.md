@@ -15,26 +15,20 @@ Install examples from repo root:
    - `C:\vcpkg\vcpkg.exe install --triplet x64-windows --x-manifest-root .\FireEngine --x-feature=editor,ecs-data,physics,audio,asset-pipeline,tooling`
 3. Ensure Visual Studio vcpkg integration is enabled (`vcpkg integrate install`).
 
-## 2) Manual third_party layout (fallback)
-- Property file: `FireEngine/FireEngine.ThirdParty.props`
-- Expected root: `FireEngine/third_party/`
+## 2) Current linker mapping (based on your installed files)
+The project now targets the library names you reported from:
+`FireEngine\vcpkg_installed\x64-windows\{lib,debug\lib}`
 
-Expected subfolders:
-- `glad`, `glfw`, `glm`, `stb`, `assimp`, `imgui`, `imguizmo`, `mono`, `openal`,
-  `bullet`, `yaml-cpp`, `entt`, `nlohmann_json`, `spdlog`, `freetype`, `physfs`.
-
-The property sheet already defines include/library paths and linker dependencies for this full set.
-
-## Linked Libraries (project-wide)
 Configured in `FireEngine/FireEngine.ThirdParty.props`:
-- OpenGL + windowing: `opengl32.lib`, `$(GlfwLibraryName)`, `glad.lib`
-- Rendering/editor/model pipeline: `assimp.lib`, `imgui.lib`, `ImGuizmo.lib`
-- Scripting: `mono-2.0-sgen.lib` (manual integration; not in vcpkg baseline)
-- Physics: `BulletDynamics.lib`, `BulletCollision.lib`, `LinearMath.lib`
-- Audio: `openal32.lib`
-- Data/assets: `yaml-cpp.lib`, `physfs.lib`, `freetype.lib`
-- Required Windows system libs: `ws2_32.lib`, `winmm.lib`, `imm32.lib`, `version.lib`, `bcrypt.lib`, `dbghelp.lib`
-- GLFW import library defaults to `glfw3dll.lib` via `GlfwLibraryName`; override this MSBuild property if your package provides `glfw3.lib` instead.
+- `glfw3dll.lib` (via `$(GlfwLibraryName)`)
+- `glad.lib` (via `$(GladLibraryName)`)
+- `assimp-vc143-mt.lib` for Release, `assimp-vc143-mtd.lib` for Debug (via `$(AssimpLibraryName)`)
+- Windows system libs: `ws2_32.lib`, `winmm.lib`, `imm32.lib`, `version.lib`, `bcrypt.lib`, `dbghelp.lib`
+
+The project also copies runtime DLLs from:
+- `vcpkg_installed\x64-windows\bin` (Release)
+- `vcpkg_installed\x64-windows\debug\bin` (Debug)
+into `$(OutDir)` after build.
 
 ## Troubleshooting: baseline checkout errors (git 128)
 If Visual Studio shows errors similar to:
@@ -60,6 +54,4 @@ This script fetches vcpkg history, rewrites `builtin-baseline` in `FireEngine/vc
 ## Notes
 - `mono` is intentionally excluded from `FireEngine/vcpkg.json` because that port may be unavailable for your selected baseline/triplet.
 - Integrate Mono manually in `third_party/mono` (or another package source) and keep linking via `FireEngine.ThirdParty.props`.
-- Some library names may vary by package manager/build profile (for example debug suffixes or compiler-specific names).
-- If your local package names differ, update `FireEngineThirdPartyLibraries` in `FireEngine/FireEngine.ThirdParty.props` once and all configurations will pick it up.
 - If your repository is under OneDrive, ensure files are fully available offline to avoid intermittent toolchain read failures.

@@ -1,57 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="FireEngineThirdParty">
-    <ThirdPartyRoot>$(MSBuildThisFileDirectory)third_party\</ThirdPartyRoot>
+    <!-- Defaults target vcpkg manifest output under SolutionDir. -->
+    <VcpkgTriplet Condition="'$(VcpkgTriplet)'==''">x64-windows</VcpkgTriplet>
+    <VcpkgInstalledRoot Condition="'$(VcpkgInstalledRoot)'==''">$(SolutionDir)vcpkg_installed\$(VcpkgTriplet)\</VcpkgInstalledRoot>
+
+    <!-- Fallback manual tree (can be used by overriding include/lib directories below). -->
+    <ThirdPartyRoot Condition="'$(ThirdPartyRoot)'==''">$(MSBuildThisFileDirectory)third_party\</ThirdPartyRoot>
+
+    <!-- Library names observed in your installed vcpkg tree. -->
     <GlfwLibraryName Condition="'$(GlfwLibraryName)'==''">glfw3dll.lib</GlfwLibraryName>
+    <GladLibraryName Condition="'$(GladLibraryName)'==''">glad.lib</GladLibraryName>
+    <AssimpLibraryName Condition="'$(Configuration)'=='Debug'">assimp-vc143-mtd.lib</AssimpLibraryName>
+    <AssimpLibraryName Condition="'$(Configuration)'!='Debug'">assimp-vc143-mt.lib</AssimpLibraryName>
 
     <ThirdPartyIncludeDirectories>
-      $(ThirdPartyRoot)glad\include;
-      $(ThirdPartyRoot)glfw\include;
-      $(ThirdPartyRoot)glm;
-      $(ThirdPartyRoot)stb;
-      $(ThirdPartyRoot)assimp\include;
-      $(ThirdPartyRoot)imgui;
-      $(ThirdPartyRoot)imguizmo;
-      $(ThirdPartyRoot)mono\include;
-      $(ThirdPartyRoot)openal\include;
-      $(ThirdPartyRoot)bullet\include;
-      $(ThirdPartyRoot)yaml-cpp\include;
-      $(ThirdPartyRoot)entt\include;
-      $(ThirdPartyRoot)nlohmann_json\include;
-      $(ThirdPartyRoot)spdlog\include;
-      $(ThirdPartyRoot)freetype\include;
-      $(ThirdPartyRoot)physfs\include
+      $(VcpkgInstalledRoot)include;
+      $(ThirdPartyRoot)include
     </ThirdPartyIncludeDirectories>
 
     <ThirdPartyLibraryDirectories>
-      $(ThirdPartyRoot)glfw\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)glad\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)assimp\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)imgui\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)imguizmo\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)mono\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)openal\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)bullet\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)yaml-cpp\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)freetype\lib\$(Platform)\$(Configuration);
-      $(ThirdPartyRoot)physfs\lib\$(Platform)\$(Configuration)
+      $(VcpkgInstalledRoot)lib;
+      $(VcpkgInstalledRoot)debug\lib
     </ThirdPartyLibraryDirectories>
 
     <FireEngineThirdPartyLibraries>
       opengl32.lib;
       $(GlfwLibraryName);
-      glad.lib;
-      assimp.lib;
-      imgui.lib;
-      ImGuizmo.lib;
-      mono-2.0-sgen.lib;
-      openal32.lib;
-      BulletDynamics.lib;
-      BulletCollision.lib;
-      LinearMath.lib;
-      yaml-cpp.lib;
-      freetype.lib;
-      physfs.lib;
+      $(GladLibraryName);
+      $(AssimpLibraryName);
       ws2_32.lib;
       winmm.lib;
       imm32.lib;
@@ -59,5 +36,8 @@
       bcrypt.lib;
       dbghelp.lib
     </FireEngineThirdPartyLibraries>
+
+    <VcpkgRuntimeBinDir Condition="'$(Configuration)'=='Debug'">$(VcpkgInstalledRoot)debug\bin\</VcpkgRuntimeBinDir>
+    <VcpkgRuntimeBinDir Condition="'$(Configuration)'!='Debug'">$(VcpkgInstalledRoot)bin\</VcpkgRuntimeBinDir>
   </PropertyGroup>
 </Project>
