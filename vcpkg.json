@@ -1,0 +1,26 @@
+{
+  "name": "fireengine",
+  "version-string": "0.1.0",
+  "builtin-baseline": "a3f63917f7f485e7f0f1606ec89f0ce5f4f9fb2e",
+  "dependencies": [
+    "glad",
+    "glfw3",
+    "glm",
+    "stb",
+    "assimp",
+    {
+      "name": "imgui",
+      "features": ["glfw-binding", "opengl3-binding", "docking-experimental"]
+    },
+    "entt",
+    "nlohmann-json",
+    "yaml-cpp",
+    "mono",
+    "bullet3",
+    "openal-soft",
+    "freetype",
+    "physfs",
+    "spdlog",
+    "tracy"
+  ]
+}
