@@ -1,0 +1,3 @@
+powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\FireEngine\vcpkg.json -Triplet x64-windows
+
+powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\FireEngine\vcpkg.json -Triplet x64-windows -Features editor,ecs-data,physics,audio,asset-pipeline,tooling
