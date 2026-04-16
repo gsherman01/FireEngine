@@ -168,6 +168,11 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClCompile Include="src\Core\Input.cpp" />
+    <ClCompile Include="src\Engine\Engine.cpp" />
+    <ClCompile Include="src\Systems\AnimationSystem.cpp" />
+    <ClCompile Include="src\Systems\CameraSystem.cpp" />
+    <ClCompile Include="src\Systems\RenderSystem.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Renderer\Camera.cpp" />
     <ClCompile Include="src\Renderer\Framebuffer.cpp" />
@@ -178,13 +183,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\Core\Input.h" />
+    <ClInclude Include="src\ECS\Entity.h" />
+    <ClInclude Include="src\ECS\Registry.h" />
+    <ClInclude Include="src\Engine\Engine.h" />
     <ClInclude Include="src\Renderer\Camera.h" />
     <ClInclude Include="src\Renderer\Framebuffer.h" />
     <ClInclude Include="src\Renderer\Mesh.h" />
     <ClInclude Include="src\Renderer\Renderer.h" />
     <ClInclude Include="src\Renderer\Shader.h" />
     <ClInclude Include="src\Renderer\Texture.h" />
+    <ClInclude Include="src\Scene\Components.h" />
     <ClInclude Include="src\Scene\Transform.h" />
+    <ClInclude Include="src\Systems\AnimationSystem.h" />
+    <ClInclude Include="src\Systems\CameraSystem.h" />
+    <ClInclude Include="src\Systems\RenderSystem.h" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
