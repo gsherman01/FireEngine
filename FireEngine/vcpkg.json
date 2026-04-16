@@ -1,67 +1,68 @@
-﻿{
-    "name":  "fireengine",
-    "version-string":  "0.1.0",
-    "builtin-baseline":  "bf1ca0b08452bf9ecea957ed38453384d31cab5e",
-    "default-features":  [
-                             "milestone1"
-                         ],
-    "features":  {
-                     "milestone1":  {
-                                        "description":  "Milestone 1 renderer requirements",
-                                        "dependencies":  [
-                                                             "glad",
-                                                             "glfw3",
-                                                             "glm",
-                                                             "stb",
-                                                             "assimp"
-                                                         ]
-                                    },
-                     "editor":  {
-                                    "description":  "Editor UI dependencies",
-                                    "dependencies":  [
-                                                         {
-                                                             "name":  "imgui",
-                                                             "features":  [
-                                                                              "glfw-binding",
-                                                                              "opengl3-binding",
-                                                                              "docking-experimental"
-                                                                          ]
-                                                         }
-                                                     ]
-                                },
-                     "ecs-data":  {
-                                      "description":  "ECS and data serialization dependencies",
-                                      "dependencies":  [
-                                                           "entt",
-                                                           "nlohmann-json",
-                                                           "yaml-cpp"
-                                                       ]
-                                  },
-                     "physics":  {
-                                     "description":  "Physics module dependencies",
-                                     "dependencies":  [
-                                                          "bullet3"
-                                                      ]
-                                 },
-                     "audio":  {
-                                   "description":  "Audio module dependencies",
-                                   "dependencies":  [
-                                                        "openal-soft"
-                                                    ]
-                               },
-                     "asset-pipeline":  {
-                                            "description":  "Asset and font dependencies",
-                                            "dependencies":  [
-                                                                 "freetype",
-                                                                 "physfs"
-                                                             ]
-                                        },
-                     "tooling":  {
-                                     "description":  "Logging and profiling dependencies",
-                                     "dependencies":  [
-                                                          "spdlog",
-                                                          "tracy"
-                                                      ]
-                                 }
-                 }
+{
+    "name": "fireengine",
+    "version-string": "0.1.0",
+    "builtin-baseline": "bf1ca0b08452bf9ecea957ed38453384d31cab5e",
+    "default-features": [
+        "milestone1",
+        "editor"
+    ],
+    "features": {
+        "milestone1": {
+            "description": "Milestone 1 renderer requirements",
+            "dependencies": [
+                "glad",
+                "glfw3",
+                "glm",
+                "stb",
+                "assimp"
+            ]
+        },
+        "editor": {
+            "description": "Editor UI dependencies",
+            "dependencies": [
+                {
+                    "name": "imgui",
+                    "features": [
+                        "glfw-binding",
+                        "opengl3-binding",
+                        "docking-experimental"
+                    ]
+                }
+            ]
+        },
+        "ecs-data": {
+            "description": "ECS and data serialization dependencies",
+            "dependencies": [
+                "entt",
+                "nlohmann-json",
+                "yaml-cpp"
+            ]
+        },
+        "physics": {
+            "description": "Physics module dependencies",
+            "dependencies": [
+                "bullet3"
+            ]
+        },
+        "audio": {
+            "description": "Audio module dependencies",
+            "dependencies": [
+                "openal-soft"
+            ]
+        },
+        "asset-pipeline": {
+            "description": "Asset and font dependencies",
+            "dependencies": [
+                "freetype",
+                "physfs"
+            ]
+        },
+        "tooling": {
+            "description": "Logging and profiling dependencies",
+            "dependencies": [
+                "spdlog",
+                "tracy"
+            ]
+        }
+    }
 }
