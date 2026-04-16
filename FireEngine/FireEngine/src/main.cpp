@@ -1,104 +1,23 @@
-#include "Renderer/Camera.h"
-#include "Renderer/Framebuffer.h"
-#include "Renderer/Mesh.h"
-#include "Renderer/Renderer.h"
-#include "Renderer/Shader.h"
-#include "Scene/Transform.h"
+#include "Core/Input.h"
+#include "Engine/Engine.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+
 #include <iostream>
-#include <vector>
 
 namespace
 {
-    int g_windowWidth = 1280;
-    int g_windowHeight = 720;
-    bool g_firstMouse = true;
-    float g_lastMouseX = 0.0f;
-    float g_lastMouseY = 0.0f;
-    Camera* g_camera = nullptr;
-    Framebuffer* g_framebuffer = nullptr;
+    constexpr int kWindowWidth = 1280;
+    constexpr int kWindowHeight = 720;
 
     void FramebufferSizeCallback(GLFWwindow*, int width, int height)
     {
-        g_windowWidth = width;
-        g_windowHeight = height;
         glViewport(0, 0, width, height);
-
-        if (g_framebuffer != nullptr)
-        {
-            g_framebuffer->Resize(width, height);
-        }
-    }
-
-    void MouseCallback(GLFWwindow*, double xPos, double yPos)
-    {
-        if (g_firstMouse)
-        {
-            g_lastMouseX = static_cast<float>(xPos);
-            g_lastMouseY = static_cast<float>(yPos);
-            g_firstMouse = false;
-        }
-
-        const float deltaX = static_cast<float>(xPos) - g_lastMouseX;
-        const float deltaY = g_lastMouseY - static_cast<float>(yPos);
-
-        g_lastMouseX = static_cast<float>(xPos);
-        g_lastMouseY = static_cast<float>(yPos);
-
-        if (g_camera != nullptr)
-        {
-            g_camera->ProcessMouse(deltaX, deltaY);
-        }
-    }
-
-    std::vector<Vertex> BuildCubeVertices()
-    {
-        return {
-            {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f,-1.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f,-1.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f,-1.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f,-1.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{-0.5f, -0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-            {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-
-            {{ 0.5f, -0.5f, -0.5f}, { 1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f,  0.5f}, { 1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f,  0.5f}, { 1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-            {{ 0.5f,  0.5f, -0.5f}, { 1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {0.0f,-1.0f, 0.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f, -0.5f}, {0.0f,-1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{ 0.5f, -0.5f,  0.5f}, {0.0f,-1.0f, 0.0f}, {1.0f, 1.0f}},
-            {{-0.5f, -0.5f,  0.5f}, {0.0f,-1.0f, 0.0f}, {0.0f, 1.0f}}
-        };
-    }
-
-    std::vector<unsigned int> BuildCubeIndices()
-    {
-        return {
-            0, 1, 2, 2, 3, 0,
-            4, 6, 5, 6, 4, 7,
-            8, 9,10,10,11, 8,
-            12,14,13,14,12,15,
-            16,17,18,18,19,16,
-            20,22,21,22,20,23
-        };
     }
 }
 
@@ -114,10 +33,10 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(g_windowWidth, g_windowHeight, "FireEngine - Milestone 1", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(kWindowWidth, kWindowHeight, "FireEngine - Milestone 1.5", nullptr, nullptr);
     if (window == nullptr)
     {
-        std::cerr << "Failed to create window." << std::endl;
+        std::cerr << "Failed to create GLFW window." << std::endl;
         glfwTerminate();
         return 1;
     }
@@ -134,93 +53,88 @@ int main()
     }
 
     glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
-    glfwSetCursorPosCallback(window, MouseCallback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
     glEnable(GL_DEPTH_TEST);
 
-    Shader shader;
-    if (!shader.LoadFromFiles("assets/shaders/basic.vert", "assets/shaders/basic.frag"))
+    Input::Initialize(window);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
+    Engine engine;
+    if (!engine.Initialize(kWindowWidth, kWindowHeight))
     {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+
         glfwDestroyWindow(window);
         glfwTerminate();
         return 1;
     }
-
-    Mesh cube;
-    cube.SetData(BuildCubeVertices(), BuildCubeIndices());
-
-    Camera camera;
-    g_camera = &camera;
-
-    Framebuffer framebuffer;
-    if (!framebuffer.Create(g_windowWidth, g_windowHeight))
-    {
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        return 1;
-    }
-    g_framebuffer = &framebuffer;
-
-    Renderer renderer;
-
-    Transform objectA;
-    objectA.position = {-1.25f, 0.0f, 0.0f};
-
-    Transform objectB;
-    objectB.position = {1.25f, 0.0f, 0.0f};
 
     float lastTime = static_cast<float>(glfwGetTime());
 
     while (!glfwWindowShouldClose(window))
     {
-        const float currentTime = static_cast<float>(glfwGetTime());
-        const float deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
+        Input::BeginFrame();
+        glfwPollEvents();
 
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
         {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
 
-        camera.ProcessKeyboard(
-            glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS,
-            glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS,
-            glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS,
-            glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS,
-            deltaTime);
+        const float currentTime = static_cast<float>(glfwGetTime());
+        const float deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
 
-        objectA.rotationDegrees.y += 25.0f * deltaTime;
-        objectB.rotationDegrees.x += 30.0f * deltaTime;
+        engine.Update(deltaTime);
 
-        framebuffer.Bind();
-        glViewport(0, 0, framebuffer.GetWidth(), framebuffer.GetHeight());
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
-        renderer.BeginFrame({0.08f, 0.10f, 0.14f});
+        ImGui::Begin("Scene Hierarchy");
+        ImGui::TextUnformatted("- Camera");
+        ImGui::TextUnformatted("- Directional Light");
+        ImGui::TextUnformatted("- Point Light");
+        ImGui::TextUnformatted("- Cube A");
+        ImGui::TextUnformatted("- Cube B");
+        ImGui::End();
 
-        const float aspect = static_cast<float>(framebuffer.GetWidth()) / static_cast<float>(framebuffer.GetHeight());
-        const glm::vec3 lightPosition(2.0f, 2.0f, 2.0f);
-        const glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+        ImGui::Begin("Viewport");
+        const ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+        engine.Render(static_cast<int>(viewportSize.x), static_cast<int>(viewportSize.y));
 
-        renderer.DrawMesh(cube, shader, objectA.ToMatrix(), camera, aspect, {0.95f, 0.40f, 0.35f}, lightPosition, lightColor);
-        renderer.DrawMesh(cube, shader, objectB.ToMatrix(), camera, aspect, {0.30f, 0.65f, 0.95f}, lightPosition, lightColor);
+        ImGui::Image(
+            reinterpret_cast<ImTextureID>(static_cast<intptr_t>(engine.GetViewportTexture())),
+            viewportSize,
+            ImVec2(0.0f, 1.0f),
+            ImVec2(1.0f, 0.0f));
+        ImGui::End();
 
-        framebuffer.Unbind();
+        ImGui::Render();
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer.GetHandle());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBlitFramebuffer(
-            0, 0, framebuffer.GetWidth(), framebuffer.GetHeight(),
-            0, 0, g_windowWidth, g_windowHeight,
-            GL_COLOR_BUFFER_BIT,
-            GL_NEAREST);
+        int windowWidth = 0;
+        int windowHeight = 0;
+        glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, windowWidth, windowHeight);
+        glClearColor(0.05f, 0.06f, 0.08f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
-    g_framebuffer = nullptr;
-    g_camera = nullptr;
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwDestroyWindow(window);
     glfwTerminate();

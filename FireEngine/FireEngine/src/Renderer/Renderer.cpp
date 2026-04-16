@@ -19,8 +19,11 @@ void Renderer::DrawMesh(
     const Camera& camera,
     float aspectRatio,
     const glm::vec3& objectColor,
-    const glm::vec3& lightPosition,
-    const glm::vec3& lightColor) const
+    const glm::vec3& pointLightPosition,
+    const glm::vec3& pointLightColor,
+    const glm::vec3& directionalLightDirection,
+    const glm::vec3& directionalLightColor,
+    float shininess) const
 {
     shader.Use();
 
@@ -32,9 +35,12 @@ void Renderer::DrawMesh(
     shader.SetMat4("uProjection", projection);
 
     shader.SetVec3("uObjectColor", objectColor);
-    shader.SetVec3("uLightPosition", lightPosition);
-    shader.SetVec3("uLightColor", lightColor);
+    shader.SetVec3("uPointLightPosition", pointLightPosition);
+    shader.SetVec3("uPointLightColor", pointLightColor);
+    shader.SetVec3("uDirectionalLightDirection", directionalLightDirection);
+    shader.SetVec3("uDirectionalLightColor", directionalLightColor);
     shader.SetVec3("uCameraPosition", camera.GetPosition());
+    shader.SetFloat("uShininess", shininess);
 
     mesh.Draw();
 }

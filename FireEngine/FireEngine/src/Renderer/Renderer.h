@@ -18,6 +18,9 @@ public:
         const Camera& camera,
         float aspectRatio,
         const glm::vec3& objectColor,
-        const glm::vec3& lightPosition,
-        const glm::vec3& lightColor) const;
+        const glm::vec3& pointLightPosition,
+        const glm::vec3& pointLightColor,
+        const glm::vec3& directionalLightDirection,
+        const glm::vec3& directionalLightColor,
+        float shininess) const;
 };
