@@ -5,12 +5,34 @@
 #include "Renderer/Shader.h"
 #include "Scene/Components.h"
 
+void RenderSystem::RenderShadowMap(
+    Registry& registry,
+    const Renderer& renderer,
+    const Shader& depthShader,
+    const glm::mat4& lightSpaceMatrix) const
+{
+    for (EntityId entityId : registry.GetSystemEntities<RenderSystem>())
+    {
+        Entity entity(entityId, &registry);
+        const TransformComponent& transform = entity.GetComponent<TransformComponent>();
+        const MeshComponent& mesh = entity.GetComponent<MeshComponent>();
+        if (mesh.mesh == nullptr)
+        {
+            continue;
+        }
+
+        renderer.DrawMeshDepth(*mesh.mesh, depthShader, transform.transform.ToMatrix(), lightSpaceMatrix);
+    }
+}
+
 void RenderSystem::RenderScene(
     Registry& registry,
     const Renderer& renderer,
     const Shader& shader,
     int viewportWidth,
-    int viewportHeight) const
+    int viewportHeight,
+    const glm::mat4& lightSpaceMatrix,
+    unsigned int shadowMapTexture) const
 {
     if (viewportWidth <= 0 || viewportHeight <= 0)
     {
@@ -23,10 +45,10 @@ void RenderSystem::RenderScene(
     const glm::vec3 pointPosition = ResolvePointLightPosition(registry);
     const glm::vec3 pointColor = ResolvePointLightColor(registry);
 
-    Entity activeCamera = InvalidEntity;
+    Entity activeCamera;
     for (Entity entity : registry.View<CameraComponent>())
     {
-        const CameraComponent& camera = registry.GetComponent<CameraComponent>(entity);
+        const CameraComponent& camera = entity.GetComponent<CameraComponent>();
         if (camera.primary)
         {
             activeCamera = entity;
@@ -34,18 +56,19 @@ void RenderSystem::RenderScene(
         }
     }
 
-    if (activeCamera == InvalidEntity)
+    if (!activeCamera.IsValid())
     {
         return;
     }
 
-    const Camera& camera = registry.GetComponent<CameraComponent>(activeCamera).camera;
+    const Camera& camera = activeCamera.GetComponent<CameraComponent>().camera;
 
-    for (Entity entity : registry.View<TransformComponent, MeshComponent, MaterialComponent>())
+    for (EntityId entityId : registry.GetSystemEntities<RenderSystem>())
     {
-        const TransformComponent& transform = registry.GetComponent<TransformComponent>(entity);
-        const MeshComponent& mesh = registry.GetComponent<MeshComponent>(entity);
-        const MaterialComponent& material = registry.GetComponent<MaterialComponent>(entity);
+        Entity entity(entityId, &registry);
+        const TransformComponent& transform = entity.GetComponent<TransformComponent>();
+        const MeshComponent& mesh = entity.GetComponent<MeshComponent>();
+        const MaterialComponent& material = entity.GetComponent<MaterialComponent>();
 
         if (mesh.mesh == nullptr)
         {
@@ -63,6 +86,8 @@ void RenderSystem::RenderScene(
             pointColor,
             directionalDirection,
             directionalColor,
+            lightSpaceMatrix,
+            shadowMapTexture,
             material.shininess);
     }
 }
@@ -71,7 +96,7 @@ glm::vec3 RenderSystem::ResolveDirectionalLightColor(Registry& registry) const
 {
     for (Entity entity : registry.View<LightComponent>())
     {
-        const LightComponent& light = registry.GetComponent<LightComponent>(entity);
+        const LightComponent& light = entity.GetComponent<LightComponent>();
         if (light.type == LightType::Directional)
         {
             return light.color * light.intensity;
@@ -85,7 +110,7 @@ glm::vec3 RenderSystem::ResolveDirectionalLightDirection(Registry& registry) con
 {
     for (Entity entity : registry.View<LightComponent>())
     {
-        const LightComponent& light = registry.GetComponent<LightComponent>(entity);
+        const LightComponent& light = entity.GetComponent<LightComponent>();
         if (light.type == LightType::Directional)
         {
             return light.direction;
@@ -99,7 +124,7 @@ glm::vec3 RenderSystem::ResolvePointLightPosition(Registry& registry) const
 {
     for (Entity entity : registry.View<LightComponent>())
     {
-        const LightComponent& light = registry.GetComponent<LightComponent>(entity);
+        const LightComponent& light = entity.GetComponent<LightComponent>();
         if (light.type == LightType::Point)
         {
             return light.position;
@@ -113,7 +138,7 @@ glm::vec3 RenderSystem::ResolvePointLightColor(Registry& registry) const
 {
     for (Entity entity : registry.View<LightComponent>())
     {
-        const LightComponent& light = registry.GetComponent<LightComponent>(entity);
+        const LightComponent& light = entity.GetComponent<LightComponent>();
         if (light.type == LightType::Point)
         {
             return light.color * light.intensity;

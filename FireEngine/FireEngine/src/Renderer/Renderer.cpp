@@ -23,6 +23,8 @@ void Renderer::DrawMesh(
     const glm::vec3& pointLightColor,
     const glm::vec3& directionalLightDirection,
     const glm::vec3& directionalLightColor,
+    const glm::mat4& lightSpaceMatrix,
+    unsigned int shadowMapTexture,
     float shininess) const
 {
     shader.Use();
@@ -40,7 +42,23 @@ void Renderer::DrawMesh(
     shader.SetVec3("uDirectionalLightDirection", directionalLightDirection);
     shader.SetVec3("uDirectionalLightColor", directionalLightColor);
     shader.SetVec3("uCameraPosition", camera.GetPosition());
+    shader.SetMat4("uLightSpaceMatrix", lightSpaceMatrix);
+    shader.SetInt("uShadowMap", 0);
     shader.SetFloat("uShininess", shininess);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, shadowMapTexture);
 
+    mesh.Draw();
+}
+
+void Renderer::DrawMeshDepth(
+    const Mesh& mesh,
+    const Shader& depthShader,
+    const glm::mat4& model,
+    const glm::mat4& lightSpaceMatrix) const
+{
+    depthShader.Use();
+    depthShader.SetMat4("uModel", model);
+    depthShader.SetMat4("uLightSpaceMatrix", lightSpaceMatrix);
     mesh.Draw();
 }

@@ -6,6 +6,12 @@
 #include "Scene/Transform.h"
 
 #include <glm/glm.hpp>
+#include <string>
+
+struct NameComponent
+{
+    std::string name = "Entity";
+};
 
 struct TransformComponent
 {
