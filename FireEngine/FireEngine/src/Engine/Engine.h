@@ -1,22 +1,31 @@
 #pragma once
 
 #include "ECS/Registry.h"
+#include "Assets/AssetImporter.h"
+#include "Assets/AssetManager.h"
 #include "Renderer/Framebuffer.h"
 #include "Renderer/Mesh.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/Shader.h"
+#include "Renderer/ShadowMap.h"
 #include "Systems/AnimationSystem.h"
 #include "Systems/CameraSystem.h"
 #include "Systems/RenderSystem.h"
+
+#include <string>
 
 class Engine
 {
 public:
     bool Initialize(int width, int height);
     void Update(float deltaTime);
-    void Render(int viewportWidth, int viewportHeight);
+    void RenderEditor(int viewportWidth, int viewportHeight);
+    void RenderGame(int viewportWidth, int viewportHeight);
+    bool ImportAsset(const std::string& path);
 
     unsigned int GetViewportTexture() const { return m_framebuffer.GetColorTexture(); }
+    Registry& GetRegistry() { return m_registry; }
+    const AssetManager& GetAssetManager() const { return m_assetManager; }
 
 private:
     void BuildDemoScene();
@@ -25,10 +34,11 @@ private:
 
     Renderer m_renderer;
     Shader m_shader;
+    Shader m_shadowDepthShader;
     Framebuffer m_framebuffer;
+    ShadowMap m_shadowMap;
     Mesh m_cubeMesh;
 
-    CameraSystem m_cameraSystem;
-    RenderSystem m_renderSystem;
-    AnimationSystem m_animationSystem;
+    AssetManager m_assetManager;
+    AssetImporter m_assetImporter;
 };
