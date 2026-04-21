@@ -8,9 +8,10 @@
 
 void CameraSystem::Update(Registry& registry, float deltaTime) const
 {
-    for (Entity entity : registry.View<CameraComponent>())
+    for (EntityId entityId : registry.GetSystemEntities<CameraSystem>())
     {
-        CameraComponent& cameraComponent = registry.GetComponent<CameraComponent>(entity);
+        Entity entity(entityId, &registry);
+        CameraComponent& cameraComponent = entity.GetComponent<CameraComponent>();
         if (!cameraComponent.primary)
         {
             continue;

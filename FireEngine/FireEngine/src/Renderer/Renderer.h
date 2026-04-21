@@ -22,5 +22,13 @@ public:
         const glm::vec3& pointLightColor,
         const glm::vec3& directionalLightDirection,
         const glm::vec3& directionalLightColor,
+        const glm::mat4& lightSpaceMatrix,
+        unsigned int shadowMapTexture,
         float shininess) const;
+
+    void DrawMeshDepth(
+        const Mesh& mesh,
+        const Shader& depthShader,
+        const glm::mat4& model,
+        const glm::mat4& lightSpaceMatrix) const;
 };

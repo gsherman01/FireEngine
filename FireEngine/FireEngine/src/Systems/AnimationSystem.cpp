@@ -5,10 +5,11 @@
 
 void AnimationSystem::Update(Registry& registry, float deltaTime) const
 {
-    for (Entity entity : registry.View<AnimationComponent, TransformComponent>())
+    for (EntityId entityId : registry.GetSystemEntities<AnimationSystem>())
     {
-        AnimationComponent& animation = registry.GetComponent<AnimationComponent>(entity);
-        TransformComponent& transform = registry.GetComponent<TransformComponent>(entity);
+        Entity entity(entityId, &registry);
+        AnimationComponent& animation = entity.GetComponent<AnimationComponent>();
+        TransformComponent& transform = entity.GetComponent<TransformComponent>();
 
         animation.playbackTime += deltaTime;
         transform.transform.rotationDegrees.y += 20.0f * deltaTime;
