@@ -4,9 +4,13 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
+#include "./imgui.h"
+#include "./imgui_impl_opengl3.h"
+#include "./imgui_impl_glfw.h"
+
+//#include <imgui.h>
+//#include <backends/imgui_impl_glfw.h>
+//#include <backends/imgui_impl_opengl3.h>
 
 #include <iostream>
 
@@ -110,11 +114,18 @@ int main()
         const ImVec2 viewportSize = ImGui::GetContentRegionAvail();
         engine.Render(static_cast<int>(viewportSize.x), static_cast<int>(viewportSize.y));
 
+        ImTextureID texID = (ImTextureID)(intptr_t)engine.GetViewportTexture(); 
         ImGui::Image(
-            reinterpret_cast<ImTextureID>(static_cast<intptr_t>(engine.GetViewportTexture())),
+            texID,
             viewportSize,
             ImVec2(0.0f, 1.0f),
-            ImVec2(1.0f, 0.0f));
+            ImVec2(1.0f, 0.0f)
+        );
+        //ImGui::Image(
+        //    reinterpret_cast<ImTextureID>(static_cast<intptr_t>(engine.GetViewportTexture())),
+        //    viewportSize,
+        //    ImVec2(0.0f, 1.0f),
+        //    ImVec2(1.0f, 0.0f));
         ImGui::End();
 
         ImGui::Render();

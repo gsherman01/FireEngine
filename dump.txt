@@ -1,3 +1,37 @@
 powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\FireEngine\vcpkg.json -Triplet x64-windows
 
 powershell -ExecutionPolicy Bypass -File .\scripts\Sync-VcpkgBaseline.ps1 -VcpkgRoot C:\vcpkg -ManifestPath .\FireEngine\vcpkg.json -Triplet x64-windows -Features editor,ecs-data,physics,audio,asset-pipeline,tooling
+
+
+
+
+1.5a prompt 
+I am not satisfied with the usability and ease of the ECS,
+I would need more things of the ECS to be templated and functionality to be surfaced through member functions.
+I want the Components slot be tied to the entities as that it can be reused.
+so each entity has an id , it has a masking of what components it has.
+then in Entity, you could add,get and has a component in the class member function.
+in Registry, you should be able to grab entities and systems and delete entities.
+in Systems, it should have a maskin checker to see what entities should subcribe to a system when it is created/remade.
+Then there is an entity manager to know what entities are existing in the scene.
+
+Next, I want the asset manager and importer such that I can import audio , png , meshes and animations to achieve the 3D game graphics engine.
+
+I would want the rendering system to be more feature loaded.
+like multi rendering,
+enabling the rendering of an environment with shadows.
+
+and then if possible
+I would like to the imgui editor to be refactorise.
+
+Firstly, I would like the editor to be separated from the app. Meaning I can run the engine without the editor as a game mode rather than the editor mode.
+then if possible, this imgui should have functionality to build an hiearchy with text and input field.
+
+I want it to link up with the entity manger/registry to see the list of entities and enabling us to edit them.
+make it as polished as possible
+
+
+
+
+
+
