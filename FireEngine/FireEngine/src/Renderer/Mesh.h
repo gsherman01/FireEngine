@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <vector>
 
 struct Vertex
@@ -7,6 +8,9 @@ struct Vertex
     float position[3];
     float normal[3];
     float uv[2];
+    float tangent[3];
+    int boneIds[4];
+    float boneWeights[4];
 };
 
 class Mesh

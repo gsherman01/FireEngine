@@ -1,12 +1,14 @@
 #pragma once
 
 #include "Renderer/Camera.h"
-#include "Renderer/Mesh.h"
-#include "Renderer/Texture.h"
+#include "Renderer/Material.h"
+#include "Renderer/Model.h"
 #include "Scene/Transform.h"
 
 #include <glm/glm.hpp>
+#include <memory>
 #include <string>
+#include <vector>
 
 struct NameComponent
 {
@@ -20,7 +22,7 @@ struct TransformComponent
 
 struct MeshComponent
 {
-    Mesh* mesh = nullptr;
+    std::shared_ptr<Model> model;
 };
 
 struct CameraComponent
@@ -31,10 +33,8 @@ struct CameraComponent
 
 struct MaterialComponent
 {
-    glm::vec3 albedo = glm::vec3(1.0f);
-    Texture* diffuseTexture = nullptr;
-    Texture* specularTexture = nullptr;
-    float shininess = 32.0f;
+    Material overrideMaterial;
+    bool useModelMaterial = true;
 };
 
 enum class LightType
@@ -50,9 +50,12 @@ struct LightComponent
     glm::vec3 direction = glm::vec3(-0.2f, -1.0f, -0.3f);
     glm::vec3 position = glm::vec3(2.0f, 2.0f, 2.0f);
     float intensity = 1.0f;
+    float range = 15.0f;
 };
 
 struct AnimationComponent
 {
     float playbackTime = 0.0f;
+    float speed = 1.0f;
+    std::vector<glm::mat4> boneMatrices;
 };

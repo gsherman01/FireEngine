@@ -1,10 +1,9 @@
 #pragma once
 
-#include "ECS/Registry.h"
 #include "Assets/AssetImporter.h"
 #include "Assets/AssetManager.h"
+#include "ECS/Registry.h"
 #include "Renderer/Framebuffer.h"
-#include "Renderer/Mesh.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/Shader.h"
 #include "Renderer/ShadowMap.h"
@@ -35,10 +34,11 @@ private:
     Renderer m_renderer;
     Shader m_shader;
     Shader m_shadowDepthShader;
+    Shader m_skyboxShader;
     Framebuffer m_framebuffer;
     ShadowMap m_shadowMap;
-    Mesh m_cubeMesh;
 
     AssetManager m_assetManager;
-    AssetImporter m_assetImporter;
+
+    unsigned int m_skyboxTexture = 0;
 };

@@ -5,6 +5,32 @@
 #include "Renderer/Shader.h"
 #include "Scene/Components.h"
 
+std::vector<RenderLight> RenderSystem::CollectLights(Registry& registry) const
+{
+    std::vector<RenderLight> lights;
+    lights.reserve(8);
+
+    for (Entity entity : registry.View<LightComponent>())
+    {
+        if (lights.size() >= 8)
+        {
+            break;
+        }
+
+        const LightComponent& light = entity.GetComponent<LightComponent>();
+        RenderLight renderLight;
+        renderLight.type = light.type == LightType::Directional ? 0 : 1;
+        renderLight.color = light.color;
+        renderLight.direction = light.direction;
+        renderLight.position = light.position;
+        renderLight.intensity = light.intensity;
+        renderLight.range = light.range;
+        lights.push_back(renderLight);
+    }
+
+    return lights;
+}
+
 void RenderSystem::RenderShadowMap(
     Registry& registry,
     const Renderer& renderer,
@@ -16,40 +42,48 @@ void RenderSystem::RenderShadowMap(
         Entity entity(entityId, &registry);
         const TransformComponent& transform = entity.GetComponent<TransformComponent>();
         const MeshComponent& mesh = entity.GetComponent<MeshComponent>();
-        if (mesh.mesh == nullptr)
+
+        if (mesh.model == nullptr)
         {
             continue;
         }
 
-        renderer.DrawMeshDepth(*mesh.mesh, depthShader, transform.transform.ToMatrix(), lightSpaceMatrix);
+        const std::vector<glm::mat4> boneMatrices = entity.HasComponent<AnimationComponent>()
+            ? entity.GetComponent<AnimationComponent>().boneMatrices
+            : std::vector<glm::mat4>{};
+
+        for (const ModelMesh& modelMesh : mesh.model->meshes)
+        {
+            if (modelMesh.mesh == nullptr)
+            {
+                continue;
+            }
+
+            renderer.DrawMeshDepth(*modelMesh.mesh, depthShader, transform.transform.ToMatrix(), lightSpaceMatrix, boneMatrices);
+        }
     }
 }
 
 void RenderSystem::RenderScene(
     Registry& registry,
     const Renderer& renderer,
-    const Shader& shader,
+    const Shader& fallbackShader,
+    const Shader& skyboxShader,
     int viewportWidth,
     int viewportHeight,
     const glm::mat4& lightSpaceMatrix,
-    unsigned int shadowMapTexture) const
+    unsigned int shadowMapTexture,
+    unsigned int skyboxTexture) const
 {
     if (viewportWidth <= 0 || viewportHeight <= 0)
     {
         return;
     }
 
-    const float aspectRatio = static_cast<float>(viewportWidth) / static_cast<float>(viewportHeight);
-    const glm::vec3 directionalColor = ResolveDirectionalLightColor(registry);
-    const glm::vec3 directionalDirection = ResolveDirectionalLightDirection(registry);
-    const glm::vec3 pointPosition = ResolvePointLightPosition(registry);
-    const glm::vec3 pointColor = ResolvePointLightColor(registry);
-
     Entity activeCamera;
     for (Entity entity : registry.View<CameraComponent>())
     {
-        const CameraComponent& camera = entity.GetComponent<CameraComponent>();
-        if (camera.primary)
+        if (entity.GetComponent<CameraComponent>().primary)
         {
             activeCamera = entity;
             break;
@@ -62,88 +96,55 @@ void RenderSystem::RenderScene(
     }
 
     const Camera& camera = activeCamera.GetComponent<CameraComponent>().camera;
+    const float aspectRatio = static_cast<float>(viewportWidth) / static_cast<float>(viewportHeight);
+    const std::vector<RenderLight> lights = CollectLights(registry);
 
     for (EntityId entityId : registry.GetSystemEntities<RenderSystem>())
     {
         Entity entity(entityId, &registry);
         const TransformComponent& transform = entity.GetComponent<TransformComponent>();
         const MeshComponent& mesh = entity.GetComponent<MeshComponent>();
-        const MaterialComponent& material = entity.GetComponent<MaterialComponent>();
+        const MaterialComponent& materialComponent = entity.GetComponent<MaterialComponent>();
 
-        if (mesh.mesh == nullptr)
+        if (mesh.model == nullptr)
         {
             continue;
         }
 
-        renderer.DrawMesh(
-            *mesh.mesh,
-            shader,
-            transform.transform.ToMatrix(),
-            camera,
-            aspectRatio,
-            material.albedo,
-            pointPosition,
-            pointColor,
-            directionalDirection,
-            directionalColor,
-            lightSpaceMatrix,
-            shadowMapTexture,
-            material.shininess);
-    }
-}
+        const std::vector<glm::mat4> boneMatrices = entity.HasComponent<AnimationComponent>()
+            ? entity.GetComponent<AnimationComponent>().boneMatrices
+            : std::vector<glm::mat4>{};
 
-glm::vec3 RenderSystem::ResolveDirectionalLightColor(Registry& registry) const
-{
-    for (Entity entity : registry.View<LightComponent>())
-    {
-        const LightComponent& light = entity.GetComponent<LightComponent>();
-        if (light.type == LightType::Directional)
+        for (const ModelMesh& modelMesh : mesh.model->meshes)
         {
-            return light.color * light.intensity;
+            if (modelMesh.mesh == nullptr)
+            {
+                continue;
+            }
+
+            Material material = materialComponent.overrideMaterial;
+            if (materialComponent.useModelMaterial && modelMesh.materialIndex < mesh.model->materials.size())
+            {
+                material = mesh.model->materials[modelMesh.materialIndex];
+            }
+
+            const Shader& shader = material.shader != nullptr ? *material.shader : fallbackShader;
+            renderer.DrawMesh(
+                *modelMesh.mesh,
+                shader,
+                material,
+                transform.transform.ToMatrix(),
+                camera,
+                aspectRatio,
+                lights,
+                lightSpaceMatrix,
+                shadowMapTexture,
+                boneMatrices);
         }
     }
 
-    return glm::vec3(0.0f);
-}
-
-glm::vec3 RenderSystem::ResolveDirectionalLightDirection(Registry& registry) const
-{
-    for (Entity entity : registry.View<LightComponent>())
+    if (skyboxTexture != 0)
     {
-        const LightComponent& light = entity.GetComponent<LightComponent>();
-        if (light.type == LightType::Directional)
-        {
-            return light.direction;
-        }
+        renderer.DrawSkybox(skyboxShader, camera, aspectRatio, skyboxTexture);
     }
-
-    return glm::vec3(-0.2f, -1.0f, -0.3f);
-}
-
-glm::vec3 RenderSystem::ResolvePointLightPosition(Registry& registry) const
-{
-    for (Entity entity : registry.View<LightComponent>())
-    {
-        const LightComponent& light = entity.GetComponent<LightComponent>();
-        if (light.type == LightType::Point)
-        {
-            return light.position;
-        }
-    }
-
-    return glm::vec3(2.0f, 2.0f, 2.0f);
-}
-
-glm::vec3 RenderSystem::ResolvePointLightColor(Registry& registry) const
-{
-    for (Entity entity : registry.View<LightComponent>())
-    {
-        const LightComponent& light = entity.GetComponent<LightComponent>();
-        if (light.type == LightType::Point)
-        {
-            return light.color * light.intensity;
-        }
-    }
-
-    return glm::vec3(1.0f);
 }
