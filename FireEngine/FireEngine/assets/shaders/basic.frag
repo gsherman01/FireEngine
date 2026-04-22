@@ -1,37 +1,39 @@
 #version 330 core
 
+struct Light
+{
+    int type; // 0 directional, 1 point
+    vec3 color;
+    vec3 direction;
+    vec3 position;
+    float intensity;
+    float range;
+};
+
 in vec3 vWorldPosition;
 in vec3 vNormal;
+in vec2 vUV;
 in vec4 vLightSpacePosition;
 
-uniform vec3 uObjectColor;
-uniform vec3 uPointLightPosition;
-uniform vec3 uPointLightColor;
-uniform vec3 uDirectionalLightDirection;
-uniform vec3 uDirectionalLightColor;
+uniform Light uLights[8];
+uniform int uLightCount;
+uniform vec3 uAlbedo;
 uniform vec3 uCameraPosition;
 uniform float uShininess;
 uniform sampler2D uShadowMap;
+uniform sampler2D uDiffuseTexture;
+uniform sampler2D uSpecularTexture;
+uniform sampler2D uNormalTexture;
+uniform bool uHasDiffuseTexture;
+uniform bool uHasSpecularTexture;
+uniform bool uHasNormalTexture;
 
 out vec4 FragColor;
-
-vec3 CalculateBlinnPhong(vec3 normal, vec3 lightDirection, vec3 lightColor, vec3 viewDirection)
-{
-    float diffuseStrength = max(dot(normal, lightDirection), 0.0);
-    vec3 diffuse = diffuseStrength * lightColor;
-
-    vec3 halfwayDirection = normalize(lightDirection + viewDirection);
-    float specularStrength = pow(max(dot(normal, halfwayDirection), 0.0), uShininess);
-    vec3 specular = 0.35 * specularStrength * lightColor;
-
-    return diffuse + specular;
-}
 
 float CalculateShadow(vec4 lightSpacePosition, vec3 normal, vec3 lightDirection)
 {
     vec3 projectionCoords = lightSpacePosition.xyz / lightSpacePosition.w;
     projectionCoords = projectionCoords * 0.5 + 0.5;
-
     if (projectionCoords.z > 1.0)
     {
         return 0.0;
@@ -43,20 +45,43 @@ float CalculateShadow(vec4 lightSpacePosition, vec3 normal, vec3 lightDirection)
     return (currentDepth - bias) > closestDepth ? 1.0 : 0.0;
 }
 
+vec3 BlinnPhong(vec3 N, vec3 L, vec3 V, vec3 lightColor, float intensity, float attenuation)
+{
+    float diff = max(dot(N, L), 0.0);
+    vec3 H = normalize(L + V);
+    float specPow = uHasSpecularTexture ? texture(uSpecularTexture, vUV).r * 128.0 : uShininess;
+    float spec = pow(max(dot(N, H), 0.0), max(specPow, 1.0));
+    return (diff + spec * 0.25) * lightColor * intensity * attenuation;
+}
+
 void main()
 {
+    vec3 baseColor = uHasDiffuseTexture ? texture(uDiffuseTexture, vUV).rgb : uAlbedo;
     vec3 normal = normalize(vNormal);
-    vec3 viewDirection = normalize(uCameraPosition - vWorldPosition);
+    vec3 viewDir = normalize(uCameraPosition - vWorldPosition);
 
-    vec3 pointDirection = normalize(uPointLightPosition - vWorldPosition);
-    vec3 directionalDirection = normalize(-uDirectionalLightDirection);
+    vec3 lighting = mix(vec3(0.05, 0.07, 0.12), vec3(0.2, 0.23, 0.27), clamp(normal.y * 0.5 + 0.5, 0.0, 1.0));
 
-    float environmentFactor = clamp(normal.y * 0.5 + 0.5, 0.0, 1.0);
-    vec3 environment = mix(vec3(0.05, 0.08, 0.12), vec3(0.18, 0.20, 0.24), environmentFactor);
-    vec3 lighting = environment;
-    lighting += CalculateBlinnPhong(normal, pointDirection, uPointLightColor, viewDirection);
-    float shadow = CalculateShadow(vLightSpacePosition, normal, directionalDirection);
-    lighting += (1.0 - shadow) * CalculateBlinnPhong(normal, directionalDirection, uDirectionalLightColor, viewDirection);
+    for (int i = 0; i < uLightCount; ++i)
+    {
+        vec3 lightDir;
+        float attenuation = 1.0;
 
-    FragColor = vec4(lighting * uObjectColor, 1.0);
+        if (uLights[i].type == 0)
+        {
+            lightDir = normalize(-uLights[i].direction);
+            float shadow = CalculateShadow(vLightSpacePosition, normal, lightDir);
+            lighting += (1.0 - shadow) * BlinnPhong(normal, lightDir, viewDir, uLights[i].color, uLights[i].intensity, attenuation);
+        }
+        else
+        {
+            vec3 delta = uLights[i].position - vWorldPosition;
+            float distanceToLight = length(delta);
+            lightDir = normalize(delta);
+            attenuation = 1.0 / (1.0 + (distanceToLight * distanceToLight) / max(uLights[i].range, 0.001));
+            lighting += BlinnPhong(normal, lightDir, viewDir, uLights[i].color, uLights[i].intensity, attenuation);
+        }
+    }
+
+    FragColor = vec4(baseColor * lighting, 1.0);
 }

@@ -1,70 +1,92 @@
 #include "AssetImporter.h"
 
+#include "AssetManager.h"
+
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include <algorithm>
-#include <cctype>
-#include <fstream>
+#include <glm/gtc/type_ptr.hpp>
 
-std::optional<std::string> AssetImporter::ImportTexturePng(const std::filesystem::path& path, AssetManager& manager) const
+namespace
 {
-    if (!std::filesystem::exists(path) || path.extension() != ".png")
+    void AddBoneWeight(Vertex& vertex, int boneId, float weight)
     {
-        return std::nullopt;
+        for (int i = 0; i < 4; ++i)
+        {
+            if (vertex.boneWeights[i] == 0.0f)
+            {
+                vertex.boneIds[i] = boneId;
+                vertex.boneWeights[i] = weight;
+                return;
+            }
+        }
     }
 
-    auto texture = std::make_unique<Texture>();
-    if (!texture->LoadFromFile(path.string(), true))
+    int ResolveBoneIndex(Model& model, const aiBone* bone)
     {
-        return std::nullopt;
+        const std::string boneName = bone->mName.C_Str();
+        auto found = model.boneNameToIndex.find(boneName);
+        if (found != model.boneNameToIndex.end())
+        {
+            return found->second;
+        }
+
+        const int newIndex = static_cast<int>(model.bones.size());
+        BoneInfo info;
+        const aiMatrix4x4& offset = bone->mOffsetMatrix;
+        info.offset = glm::transpose(glm::make_mat4(&offset.a1));
+
+        model.boneNameToIndex[boneName] = newIndex;
+        model.bones.push_back(info);
+        return newIndex;
     }
 
-    TextureAsset asset;
-    asset.id = NormalizeId(path);
-    asset.sourcePath = path.string();
-    asset.texture = std::move(texture);
+    Material BuildMaterial(const aiMaterial* material, const std::filesystem::path& modelDir, AssetManager& manager)
+    {
+        Material result;
 
-    manager.RegisterTexture(std::move(asset));
-    return NormalizeId(path);
+        auto loadTexture = [&](aiTextureType type) -> std::shared_ptr<Texture> {
+            if (material->GetTextureCount(type) == 0)
+            {
+                return nullptr;
+            }
+
+            aiString texturePath;
+            if (material->GetTexture(type, 0, &texturePath) != aiReturn_SUCCESS)
+            {
+                return nullptr;
+            }
+
+            const std::filesystem::path resolved = modelDir / texturePath.C_Str();
+            return manager.LoadTexture(resolved);
+        };
+
+        result.diffuseTexture = loadTexture(aiTextureType_DIFFUSE);
+        result.specularTexture = loadTexture(aiTextureType_SPECULAR);
+        result.normalTexture = loadTexture(aiTextureType_NORMALS);
+
+        aiColor3D color(1.0f, 1.0f, 1.0f);
+        if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == aiReturn_SUCCESS)
+        {
+            result.albedo = glm::vec3(color.r, color.g, color.b);
+        }
+
+        float shininess = 32.0f;
+        if (material->Get(AI_MATKEY_SHININESS, shininess) == aiReturn_SUCCESS)
+        {
+            result.shininess = shininess;
+        }
+
+        return result;
+    }
 }
 
-std::optional<std::string> AssetImporter::ImportAudio(const std::filesystem::path& path, AssetManager& manager) const
+std::shared_ptr<Model> AssetImporter::ImportModel(const std::filesystem::path& path, AssetManager& manager) const
 {
     if (!std::filesystem::exists(path))
     {
-        return std::nullopt;
-    }
-
-    std::string extension = path.extension().string();
-    std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    if (!IsAudioExtension(extension))
-    {
-        return std::nullopt;
-    }
-
-    AudioAsset asset;
-    asset.id = NormalizeId(path);
-    asset.sourcePath = path.string();
-    asset.byteSize = static_cast<std::size_t>(std::filesystem::file_size(path));
-
-    manager.RegisterAudio(std::move(asset));
-    return NormalizeId(path);
-}
-
-std::optional<std::string> AssetImporter::ImportMeshAndAnimations(const std::filesystem::path& path, AssetManager& manager) const
-{
-    if (!std::filesystem::exists(path))
-    {
-        return std::nullopt;
-    }
-
-    std::string extension = path.extension().string();
-    std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    if (!IsMeshExtension(extension))
-    {
-        return std::nullopt;
+        return nullptr;
     }
 
     Assimp::Importer importer;
@@ -74,69 +96,101 @@ std::optional<std::string> AssetImporter::ImportMeshAndAnimations(const std::fil
             aiProcess_JoinIdenticalVertices |
             aiProcess_CalcTangentSpace |
             aiProcess_GenSmoothNormals |
-            aiProcess_ImproveCacheLocality);
+            aiProcess_ImproveCacheLocality |
+            aiProcess_LimitBoneWeights);
 
-    if (scene == nullptr)
+    if (scene == nullptr || scene->mRootNode == nullptr)
     {
-        return std::nullopt;
+        return nullptr;
     }
 
-    const std::string id = NormalizeId(path);
+    auto model = std::make_shared<Model>();
+    model->sourcePath = path.string();
 
-    MeshAsset meshAsset;
-    meshAsset.id = id;
-    meshAsset.sourcePath = path.string();
-    meshAsset.meshCount = scene->mNumMeshes;
+    const std::filesystem::path modelDir = path.parent_path();
+    model->materials.reserve(scene->mNumMaterials);
+    for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
+    {
+        model->materials.push_back(BuildMaterial(scene->mMaterials[i], modelDir, manager));
+    }
 
+    model->meshes.reserve(scene->mNumMeshes);
     for (unsigned int meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex)
     {
-        const aiMesh* mesh = scene->mMeshes[meshIndex];
-        meshAsset.vertexCount += mesh->mNumVertices;
-        meshAsset.indexCount += mesh->mNumFaces * 3;
-    }
+        const aiMesh* sourceMesh = scene->mMeshes[meshIndex];
 
-    manager.RegisterMesh(std::move(meshAsset));
+        std::vector<Vertex> vertices(sourceMesh->mNumVertices);
+        std::vector<unsigned int> indices;
+        indices.reserve(sourceMesh->mNumFaces * 3);
 
-    if (scene->HasAnimations())
-    {
-        AnimationAsset animationAsset;
-        animationAsset.id = id;
-        animationAsset.sourcePath = path.string();
-        animationAsset.clipNames.reserve(scene->mNumAnimations);
-
-        for (unsigned int animIdx = 0; animIdx < scene->mNumAnimations; ++animIdx)
+        for (unsigned int vertexIndex = 0; vertexIndex < sourceMesh->mNumVertices; ++vertexIndex)
         {
-            const aiAnimation* animation = scene->mAnimations[animIdx];
-            animationAsset.clipNames.emplace_back(animation->mName.C_Str());
+            Vertex vertex{};
+            vertex.position[0] = sourceMesh->mVertices[vertexIndex].x;
+            vertex.position[1] = sourceMesh->mVertices[vertexIndex].y;
+            vertex.position[2] = sourceMesh->mVertices[vertexIndex].z;
+
+            if (sourceMesh->HasNormals())
+            {
+                vertex.normal[0] = sourceMesh->mNormals[vertexIndex].x;
+                vertex.normal[1] = sourceMesh->mNormals[vertexIndex].y;
+                vertex.normal[2] = sourceMesh->mNormals[vertexIndex].z;
+            }
+
+            if (sourceMesh->HasTextureCoords(0))
+            {
+                vertex.uv[0] = sourceMesh->mTextureCoords[0][vertexIndex].x;
+                vertex.uv[1] = sourceMesh->mTextureCoords[0][vertexIndex].y;
+            }
+
+            if (sourceMesh->HasTangentsAndBitangents())
+            {
+                vertex.tangent[0] = sourceMesh->mTangents[vertexIndex].x;
+                vertex.tangent[1] = sourceMesh->mTangents[vertexIndex].y;
+                vertex.tangent[2] = sourceMesh->mTangents[vertexIndex].z;
+            }
+
+            for (int i = 0; i < 4; ++i)
+            {
+                vertex.boneIds[i] = -1;
+                vertex.boneWeights[i] = 0.0f;
+            }
+
+            vertices[vertexIndex] = vertex;
         }
 
-        manager.RegisterAnimation(std::move(animationAsset));
-    }
-
-    return id;
-}
-
-std::string AssetImporter::NormalizeId(const std::filesystem::path& path)
-{
-    std::string id = path.stem().string();
-    std::transform(id.begin(), id.end(), id.begin(), [](unsigned char c) {
-        if (std::isalnum(c))
+        for (unsigned int faceIndex = 0; faceIndex < sourceMesh->mNumFaces; ++faceIndex)
         {
-            return static_cast<char>(std::tolower(c));
+            const aiFace& face = sourceMesh->mFaces[faceIndex];
+            for (unsigned int i = 0; i < face.mNumIndices; ++i)
+            {
+                indices.push_back(face.mIndices[i]);
+            }
         }
 
-        return '_';
-    });
+        for (unsigned int boneIndex = 0; boneIndex < sourceMesh->mNumBones; ++boneIndex)
+        {
+            const aiBone* bone = sourceMesh->mBones[boneIndex];
+            const int resolvedBoneIndex = ResolveBoneIndex(*model, bone);
+            for (unsigned int weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex)
+            {
+                const aiVertexWeight& weight = bone->mWeights[weightIndex];
+                if (weight.mVertexId < vertices.size())
+                {
+                    AddBoneWeight(vertices[weight.mVertexId], resolvedBoneIndex, weight.mWeight);
+                }
+            }
+        }
 
-    return id;
-}
+        auto mesh = std::make_shared<Mesh>();
+        mesh->SetData(vertices, indices);
 
-bool AssetImporter::IsAudioExtension(const std::string& extension)
-{
-    return extension == ".wav" || extension == ".mp3" || extension == ".ogg";
-}
+        ModelMesh modelMesh;
+        modelMesh.mesh = mesh;
+        modelMesh.materialIndex = sourceMesh->mMaterialIndex < model->materials.size() ? sourceMesh->mMaterialIndex : 0;
+        model->meshes.push_back(modelMesh);
+    }
 
-bool AssetImporter::IsMeshExtension(const std::string& extension)
-{
-    return extension == ".fbx" || extension == ".obj" || extension == ".gltf" || extension == ".glb";
+    manager.RegisterModel(path, model);
+    return model;
 }

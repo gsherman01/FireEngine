@@ -6,59 +6,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <filesystem>
-#include <algorithm>
-#include <cctype>
 #include <vector>
 
 namespace
 {
-    std::vector<Vertex> BuildCubeVertices()
-    {
-        return {
-            {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f,-1.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f,-1.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f,-1.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f,-1.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{-0.5f, -0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-            {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-
-            {{ 0.5f, -0.5f, -0.5f}, { 1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f,  0.5f}, { 1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f,  0.5f}, { 1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-            {{ 0.5f,  0.5f, -0.5f}, { 1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {0.0f,-1.0f, 0.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f, -0.5f}, {0.0f,-1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{ 0.5f, -0.5f,  0.5f}, {0.0f,-1.0f, 0.0f}, {1.0f, 1.0f}},
-            {{-0.5f, -0.5f,  0.5f}, {0.0f,-1.0f, 0.0f}, {0.0f, 1.0f}}
-        };
-    }
-
-    std::vector<unsigned int> BuildCubeIndices()
-    {
-        return {
-            0, 1, 2, 2, 3, 0,
-            4, 6, 5, 6, 4, 7,
-            8, 9,10,10,11, 8,
-            12,14,13,14,12,15,
-            16,17,18,18,19,16,
-            20,22,21,22,20,23
-        };
-    }
-
     glm::mat4 BuildLightSpaceMatrix(Registry& registry)
     {
         glm::vec3 lightDirection(-0.5f, -1.0f, -0.35f);
@@ -91,22 +42,33 @@ bool Engine::Initialize(int width, int height)
         return false;
     }
 
-    m_cubeMesh.SetData(BuildCubeVertices(), BuildCubeIndices());
-
-    if (!m_framebuffer.Create(width, height))
+    if (!m_skyboxShader.LoadFromFiles("assets/shaders/skybox.vert", "assets/shaders/skybox.frag"))
     {
         return false;
     }
-    if (!m_shadowMap.Create(2048))
+
+    if (!m_framebuffer.Create(width, height) || !m_shadowMap.Create(2048))
     {
         return false;
+    }
+
+    auto skybox = m_assetManager.LoadCubemap("default_sky", {
+        "assets/skybox/right.png",
+        "assets/skybox/left.png",
+        "assets/skybox/top.png",
+        "assets/skybox/bottom.png",
+        "assets/skybox/front.png",
+        "assets/skybox/back.png"});
+    if (skybox != nullptr)
+    {
+        m_skyboxTexture = skybox->GetId();
     }
 
     BuildDemoScene();
     m_registry.RegisterSystem<CameraSystem>();
     m_registry.SetSystemSignature<CameraSystem, CameraComponent>();
     m_registry.RegisterSystem<AnimationSystem>();
-    m_registry.SetSystemSignature<AnimationSystem, AnimationComponent, TransformComponent>();
+    m_registry.SetSystemSignature<AnimationSystem, AnimationComponent>();
     m_registry.RegisterSystem<RenderSystem>();
     m_registry.SetSystemSignature<RenderSystem, TransformComponent, MeshComponent, MaterialComponent>();
     return true;
@@ -120,25 +82,7 @@ void Engine::Update(float deltaTime)
 
 bool Engine::ImportAsset(const std::string& path)
 {
-    const std::filesystem::path assetPath(path);
-    if (!std::filesystem::exists(assetPath))
-    {
-        return false;
-    }
-
-    std::string extension = assetPath.extension().string();
-    std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    if (extension == ".png")
-    {
-        return m_assetImporter.ImportTexturePng(assetPath, m_assetManager).has_value();
-    }
-
-    if (extension == ".wav" || extension == ".mp3" || extension == ".ogg")
-    {
-        return m_assetImporter.ImportAudio(assetPath, m_assetManager).has_value();
-    }
-
-    return m_assetImporter.ImportMeshAndAnimations(assetPath, m_assetManager).has_value();
+    return m_assetManager.LoadModel(path) != nullptr || m_assetManager.LoadTexture(path) != nullptr;
 }
 
 void Engine::RenderEditor(int viewportWidth, int viewportHeight)
@@ -162,10 +106,12 @@ void Engine::RenderEditor(int viewportWidth, int viewportHeight)
         m_registry,
         m_renderer,
         m_shader,
+        m_skyboxShader,
         m_framebuffer.GetWidth(),
         m_framebuffer.GetHeight(),
         lightSpaceMatrix,
-        m_shadowMap.GetDepthTexture());
+        m_shadowMap.GetDepthTexture(),
+        m_skyboxTexture);
 
     m_framebuffer.Unbind();
 }
@@ -177,8 +123,6 @@ void Engine::RenderGame(int viewportWidth, int viewportHeight)
         return;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, viewportWidth, viewportHeight);
     const glm::mat4 lightSpaceMatrix = BuildLightSpaceMatrix(m_registry);
     m_shadowMap.BindForWriting();
     m_registry.GetSystem<RenderSystem>().RenderShadowMap(m_registry, m_renderer, m_shadowDepthShader, lightSpaceMatrix);
@@ -190,18 +134,20 @@ void Engine::RenderGame(int viewportWidth, int viewportHeight)
         m_registry,
         m_renderer,
         m_shader,
+        m_skyboxShader,
         viewportWidth,
         viewportHeight,
         lightSpaceMatrix,
-        m_shadowMap.GetDepthTexture());
+        m_shadowMap.GetDepthTexture(),
+        m_skyboxTexture);
 }
 
 void Engine::BuildDemoScene()
 {
     Entity cameraEntity = m_registry.CreateEntity();
     cameraEntity.AddComponent<NameComponent>().name = "Camera";
-    CameraComponent& camera = cameraEntity.AddComponent<CameraComponent>();
-    camera.primary = true;
+    cameraEntity.AddComponent<TransformComponent>();
+    cameraEntity.AddComponent<CameraComponent>().primary = true;
 
     Entity directionalLight = m_registry.CreateEntity();
     directionalLight.AddComponent<NameComponent>().name = "Directional Light";
@@ -211,26 +157,41 @@ void Engine::BuildDemoScene()
     dirLight.color = {0.85f, 0.85f, 0.90f};
     dirLight.intensity = 0.7f;
 
-    Entity pointLight = m_registry.CreateEntity();
-    pointLight.AddComponent<NameComponent>().name = "Point Light";
-    LightComponent& pLight = pointLight.AddComponent<LightComponent>();
-    pLight.type = LightType::Point;
-    pLight.position = {2.0f, 2.0f, 2.0f};
-    pLight.color = {1.0f, 1.0f, 1.0f};
-    pLight.intensity = 1.0f;
+    for (int i = 0; i < 3; ++i)
+    {
+        Entity pointLight = m_registry.CreateEntity();
+        pointLight.AddComponent<NameComponent>().name = "Point Light " + std::to_string(i + 1);
+        LightComponent& pLight = pointLight.AddComponent<LightComponent>();
+        pLight.type = LightType::Point;
+        pLight.position = {2.5f - i * 2.0f, 1.8f, 1.0f + i};
+        pLight.color = {1.0f, 0.95f - 0.2f * i, 0.8f + 0.1f * i};
+        pLight.intensity = 1.0f;
+    }
 
-    Entity cubeA = m_registry.CreateEntity();
-    cubeA.AddComponent<NameComponent>().name = "Cube A";
-    TransformComponent& transformA = cubeA.AddComponent<TransformComponent>();
-    transformA.transform.position = {-1.25f, 0.0f, 0.0f};
-    cubeA.AddComponent<MeshComponent>().mesh = &m_cubeMesh;
-    cubeA.AddComponent<MaterialComponent>().albedo = {0.95f, 0.40f, 0.35f};
+    std::shared_ptr<Model> model = m_assetManager.LoadModel("assets/models/demo_model.obj");
+    if (model == nullptr)
+    {
+        return;
+    }
 
-    Entity cubeB = m_registry.CreateEntity();
-    cubeB.AddComponent<NameComponent>().name = "Cube B";
-    TransformComponent& transformB = cubeB.AddComponent<TransformComponent>();
-    transformB.transform.position = {1.25f, 0.0f, 0.0f};
-    cubeB.AddComponent<MeshComponent>().mesh = &m_cubeMesh;
-    cubeB.AddComponent<MaterialComponent>().albedo = {0.30f, 0.65f, 0.95f};
-    cubeB.AddComponent<AnimationComponent>();
+    Entity modelA = m_registry.CreateEntity();
+    modelA.AddComponent<NameComponent>().name = "Model A";
+    TransformComponent& transformA = modelA.AddComponent<TransformComponent>();
+    transformA.transform.position = {-1.5f, 0.0f, 0.0f};
+    transformA.transform.scale = {0.75f, 0.75f, 0.75f};
+    modelA.AddComponent<MeshComponent>().model = model;
+    modelA.AddComponent<MaterialComponent>();
+
+    Entity modelB = m_registry.CreateEntity();
+    modelB.AddComponent<NameComponent>().name = "Model B";
+    TransformComponent& transformB = modelB.AddComponent<TransformComponent>();
+    transformB.transform.position = {1.5f, 0.0f, 0.0f};
+    transformB.transform.scale = {0.75f, 0.75f, 0.75f};
+    modelB.AddComponent<MeshComponent>().model = model;
+
+    MaterialComponent& material = modelB.AddComponent<MaterialComponent>();
+    material.useModelMaterial = false;
+    material.overrideMaterial.albedo = {0.35f, 0.85f, 0.95f};
+    material.overrideMaterial.shininess = 48.0f;
+    modelB.AddComponent<AnimationComponent>();
 }

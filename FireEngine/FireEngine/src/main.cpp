@@ -109,9 +109,7 @@ namespace
 
         const AssetManager& assets = engine.GetAssetManager();
         ImGui::Text("Textures: %zu", assets.GetTextureCount());
-        ImGui::Text("Audio: %zu", assets.GetAudioCount());
-        ImGui::Text("Meshes: %zu", assets.GetMeshCount());
-        ImGui::Text("Animations: %zu", assets.GetAnimationCount());
+        ImGui::Text("Models: %zu", assets.GetModelCount());
         ImGui::End();
 
         ImGui::Begin("Viewport");
