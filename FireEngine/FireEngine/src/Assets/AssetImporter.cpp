@@ -80,6 +80,82 @@ namespace
 
         return result;
     }
+
+    void ImportAnimations(const aiScene* scene, Model& model)
+    {
+        if (scene->mNumAnimations == 0)
+        {
+            return;
+        }
+
+        model.animations.reserve(scene->mNumAnimations);
+        for (unsigned int animationIndex = 0; animationIndex < scene->mNumAnimations; ++animationIndex)
+        {
+            const aiAnimation* sourceAnimation = scene->mAnimations[animationIndex];
+            if (sourceAnimation == nullptr)
+            {
+                continue;
+            }
+
+            AnimationClip clip;
+            clip.name = sourceAnimation->mName.length > 0
+                ? sourceAnimation->mName.C_Str()
+                : ("Animation " + std::to_string(animationIndex));
+            clip.durationTicks = sourceAnimation->mDuration;
+            clip.ticksPerSecond = sourceAnimation->mTicksPerSecond > 0.0 ? sourceAnimation->mTicksPerSecond : 25.0;
+
+            clip.channels.reserve(sourceAnimation->mNumChannels);
+            for (unsigned int channelIndex = 0; channelIndex < sourceAnimation->mNumChannels; ++channelIndex)
+            {
+                const aiNodeAnim* sourceChannel = sourceAnimation->mChannels[channelIndex];
+                if (sourceChannel == nullptr)
+                {
+                    continue;
+                }
+
+                const std::string boneName = sourceChannel->mNodeName.C_Str();
+                auto foundBone = model.boneNameToIndex.find(boneName);
+                if (foundBone == model.boneNameToIndex.end())
+                {
+                    continue;
+                }
+
+                BoneAnimationChannel channel;
+                channel.boneIndex = foundBone->second;
+
+                channel.positions.reserve(sourceChannel->mNumPositionKeys);
+                for (unsigned int i = 0; i < sourceChannel->mNumPositionKeys; ++i)
+                {
+                    const aiVectorKey& sourceKey = sourceChannel->mPositionKeys[i];
+                    channel.positions.push_back({
+                        sourceKey.mTime,
+                        glm::vec3(sourceKey.mValue.x, sourceKey.mValue.y, sourceKey.mValue.z)});
+                }
+
+                channel.rotations.reserve(sourceChannel->mNumRotationKeys);
+                for (unsigned int i = 0; i < sourceChannel->mNumRotationKeys; ++i)
+                {
+                    const aiQuatKey& sourceKey = sourceChannel->mRotationKeys[i];
+                    channel.rotations.push_back({
+                        sourceKey.mTime,
+                        glm::quat(sourceKey.mValue.w, sourceKey.mValue.x, sourceKey.mValue.y, sourceKey.mValue.z)});
+                }
+
+                channel.scales.reserve(sourceChannel->mNumScalingKeys);
+                for (unsigned int i = 0; i < sourceChannel->mNumScalingKeys; ++i)
+                {
+                    const aiVectorKey& sourceKey = sourceChannel->mScalingKeys[i];
+                    channel.scales.push_back({
+                        sourceKey.mTime,
+                        glm::vec3(sourceKey.mValue.x, sourceKey.mValue.y, sourceKey.mValue.z)});
+                }
+
+                clip.channels.push_back(std::move(channel));
+            }
+
+            model.animations.push_back(std::move(clip));
+        }
+    }
 }
 
 std::shared_ptr<Model> AssetImporter::ImportModel(const std::filesystem::path& path, AssetManager& manager) const
@@ -190,6 +266,8 @@ std::shared_ptr<Model> AssetImporter::ImportModel(const std::filesystem::path& p
         modelMesh.materialIndex = sourceMesh->mMaterialIndex < model->materials.size() ? sourceMesh->mMaterialIndex : 0;
         model->meshes.push_back(modelMesh);
     }
+
+    ImportAnimations(scene, *model);
 
     manager.RegisterModel(path, model);
     return model;
