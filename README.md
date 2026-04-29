@@ -73,3 +73,21 @@ FireEngine uses a forward rendering pipeline in two passes plus skybox:
 6. Press play / run loop; `AnimationSystem` + `RenderSystem` handle the rest.
 
 If a model has no animation clips, the engine falls back to a small procedural bone wiggle so you can verify skinning data is present.
+
+
+## AI/CLI Windows Build Instruction
+If you are running in a Windows-capable AI/dev environment, compile without the Visual Studio IDE:
+
+```powershell
+pwsh ./scripts/Build-Windows.ps1 -Configuration Debug -Platform x64
+```
+
+This script auto-discovers `MSBuild.exe` using `vswhere.exe` and builds `FireEngine/FireEngine.sln`, which lets an agent see compile errors directly in terminal output.
+
+Prerequisites:
+- Visual Studio 2022 or Build Tools 2022
+- MSBuild component installed
+- vcpkg dependencies restored (manifest mode)
+
+## Learner Documentation
+For intrusive graphics-call explanations (what call runs + why), see `LEARNER_HELPER.md`.

@@ -20,6 +20,10 @@ uniform int uLightCount;
 uniform vec3 uAlbedo;
 uniform vec3 uCameraPosition;
 uniform float uShininess;
+uniform float uMetallic;
+uniform float uRoughness;
+uniform float uAO;
+uniform vec3 uEmissive;
 uniform sampler2D uShadowMap;
 uniform sampler2D uDiffuseTexture;
 uniform sampler2D uSpecularTexture;
@@ -51,7 +55,9 @@ vec3 BlinnPhong(vec3 N, vec3 L, vec3 V, vec3 lightColor, float intensity, float 
     vec3 H = normalize(L + V);
     float specPow = uHasSpecularTexture ? texture(uSpecularTexture, vUV).r * 128.0 : uShininess;
     float spec = pow(max(dot(N, H), 0.0), max(specPow, 1.0));
-    return (diff + spec * 0.25) * lightColor * intensity * attenuation;
+    float micro = mix(1.0, 0.35, clamp(uRoughness, 0.0, 1.0));
+    float metalSpecBoost = mix(0.25, 0.85, clamp(uMetallic, 0.0, 1.0));
+    return (diff * micro + spec * metalSpecBoost) * lightColor * intensity * attenuation;
 }
 
 void main()
@@ -83,5 +89,7 @@ void main()
         }
     }
 
-    FragColor = vec4(baseColor * lighting, 1.0);
+    vec3 pbrTint = mix(baseColor, baseColor * 0.55, clamp(uMetallic, 0.0, 1.0));
+    vec3 shaded = pbrTint * lighting * max(uAO, 0.0) + uEmissive;
+    FragColor = vec4(shaded, 1.0);
 }

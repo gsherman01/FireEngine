@@ -51,6 +51,8 @@ void Renderer::BeginFrame(const glm::vec3& clearColor) const
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+// DrawMesh binds per-object/per-frame GPU state (matrices, lights, material params, textures)
+// then submits indexed geometry for rasterization.
 void Renderer::DrawMesh(
     const Mesh& mesh,
     const Shader& shader,
@@ -72,6 +74,10 @@ void Renderer::DrawMesh(
     shader.SetVec3("uCameraPosition", camera.GetPosition());
     shader.SetVec3("uAlbedo", material.albedo);
     shader.SetFloat("uShininess", material.shininess);
+    shader.SetFloat("uMetallic", material.metallic);
+    shader.SetFloat("uRoughness", material.roughness);
+    shader.SetFloat("uAO", material.ao);
+    shader.SetVec3("uEmissive", material.emissive);
 
     shader.SetInt("uLightCount", static_cast<int>(lights.size()));
     for (int i = 0; i < static_cast<int>(lights.size()); ++i)
