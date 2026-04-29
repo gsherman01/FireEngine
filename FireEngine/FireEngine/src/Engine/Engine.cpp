@@ -168,7 +168,21 @@ void Engine::BuildDemoScene()
         pLight.intensity = 1.0f;
     }
 
-    std::shared_ptr<Model> model = m_assetManager.LoadModel("assets/models/demo_model.obj");
+    const std::vector<std::string> demoModels = {
+        "assets/models/demo_model.obj",
+        "assets/models/ogre/ogre.obj",
+        "assets/models/dragon/dragon.obj"};
+
+    std::shared_ptr<Model> model = nullptr;
+    for (const std::string& modelPath : demoModels)
+    {
+        model = m_assetManager.LoadModel(modelPath);
+        if (model != nullptr)
+        {
+            break;
+        }
+    }
+
     if (model == nullptr)
     {
         return;
